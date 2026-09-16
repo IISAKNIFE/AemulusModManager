@@ -1,0 +1,44 @@
+name: Build Aemulus Mod Manager
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch: # Allows triggering the build manually from the Actions tab
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive # Fetches submodules if the fork relies on external libraries
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          6.0.x
+          7.0.x
+          8.0.x
+
+    - name: Restore NuGet Packages
+      run: nuget restore AemulusModManager.sln
+
+    - name: Build Solution (Release x64)
+      run: |
+        msbuild AemulusModManager.sln /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=bin\Release\
+
+    - name: Upload Built Application Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AemulusModManager-SwitchFork
+        path: |
+          **/bin/Release/**
+          !**/bin/Release/**/*.pdb
